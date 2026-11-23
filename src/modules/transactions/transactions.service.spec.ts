@@ -127,4 +127,31 @@ describe('TransactionsService', () => {
     });
     expect(stellar.simulateTransaction).toHaveBeenCalledWith('AAAA');
   });
+
+  it('returns simulation data without recording a settlement', async () => {
+    const repo = { listForUser: jest.fn() };
+    const stellar = {
+      simulateTransaction: jest.fn().mockResolvedValue({
+        latestLedger: 456,
+        events: [{ type: 'payment' }],
+        results: [],
+      }),
+    };
+    const service = new TransactionsService(
+      repo as unknown as TransactionsRepository,
+      {} as UsersService,
+      stellar as unknown as StellarService,
+    );
+
+    await expect(
+      service.simulate({ supabaseUserId: 'sb-1' }, { transactionXdr: 'BBBB' }),
+    ).resolves.toEqual({
+      simulation: {
+        latestLedger: 456,
+        events: [{ type: 'payment' }],
+        results: [],
+      },
+    });
+    expect(repo.listForUser).not.toHaveBeenCalled();
+  });
 });

@@ -196,6 +196,20 @@ describe('PaymentsService.authorize', () => {
     expect(repo.markAuthorized).toHaveBeenCalledWith(PAYMENT_ID);
     expect(emit).not.toHaveBeenCalled();
   });
+
+  it('does not emit an authorization event when the guarded update is a no-op', async () => {
+    repo.findById.mockResolvedValue(basePayment());
+    repo.markAuthorized.mockRejectedValue(
+      new ConflictException({ code: 'PAYMENT_INVALID_STATE' }),
+    );
+
+    await expect(
+      service.authorize(AUTH_USER, PAYMENT_ID, assertion),
+    ).rejects.toMatchObject({ response: { code: 'PAYMENT_INVALID_STATE' } });
+
+    expect(repo.markAuthorized).toHaveBeenCalledWith(PAYMENT_ID);
+    expect(emit).not.toHaveBeenCalled();
+  });
 });
 
 describe('PaymentsService.create', () => {
